@@ -1,0 +1,4 @@
+{% set producer_props = env_to_props('MIRROR_MAKER_PRODUCER_', '') -%}
+{% for name, value in producer_props.iteritems() -%}
+{{name}}={{value}}
+{% endfor -%}

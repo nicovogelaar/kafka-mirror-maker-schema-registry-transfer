@@ -1,0 +1,28 @@
+version: '2'
+
+services:
+
+  mirror-maker:
+    build:
+      context: ../docker
+    container_name: mirror-maker
+    volumes:
+      - "../build/libs/kafka-mirror-maker-schema-registry-transfer-0.1.0.jar:/usr/share/java/kafka/kafka-mirror-maker-schema-registry-transfer-0.1.0.jar"
+    environment:
+      MIRROR_MAKER_WHITELIST: "users|clickstream"
+      MIRROR_MAKER_CONSUMER_BOOTSTRAP_SERVERS: broker-1:9092
+      MIRROR_MAKER_CONSUMER_GROUP_ID: mirror-maker
+      MIRROR_MAKER_CONSUMER_CLIENT_ID: mirror-maker
+      MIRROR_MAKER_CONSUMER_ENABLE_AUTO_COMMIT: "false"
+      MIRROR_MAKER_CONSUMER_AUTO_OFFSET_RESET: earliest
+      MIRROR_MAKER_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY: "org.apache.kafka.clients.consumer.RoundRobinAssignor"
+      MIRROR_MAKER_PRODUCER_PARTITIONER_CLASS: "org.apache.kafka.clients.producer.internals.DefaultPartitioner"
+      MIRROR_MAKER_PRODUCER_BOOTSTRAP_SERVERS: broker-2:9092
+      MIRROR_MAKER_PRODUCER_CLIENT_ID: test
+      MIRROR_MAKER_PRODUCER_ACKS: -1
+      MIRROR_MAKER_PRODUCER_BATCH_SIZE: 100
+      MIRROR_MAKER_PRODUCER_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION: 1
+      MIRROR_MAKER_PRODUCER_RETRIES: 2147483647
+      MIRROR_MAKER_OPTS: "--num.streams=20 --abort.on.send.failure=true --message.handler=com.nicovogelaar.kafka.mirrormaker.SchemaRegistryTransfer --message.handler.args=sourceUrl=http://schema-registry-1:8081,targetUrl=http://foo:bar@schema-registry-2-secured,includeKeys=true"
+      MIRROR_MAKER_LOG4J_ROOT_LOGLEVEL: ERROR
+      MIRROR_MAKER_LOG4J_LOGGERS: com.nicovogelaar.kafka.mirrormaker.SchemaRegistryTransfer=TRACE

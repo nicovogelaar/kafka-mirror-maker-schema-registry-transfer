@@ -1,0 +1,151 @@
+version: '2'
+
+services:
+
+  zookeeper-1:
+    image: confluentinc/cp-zookeeper:5.1.0
+    hostname: zookeeper-1
+    container_name: zookeeper-1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  zookeeper-2:
+    image: confluentinc/cp-zookeeper:5.1.0
+    hostname: zookeeper-2
+    container_name: zookeeper-2
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker-1:
+    image: confluentinc/cp-kafka:5.1.0
+    hostname: broker-1
+    container_name: broker-1
+    depends_on:
+      - zookeeper-1
+    environment:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker-1:9092'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_AUTO_COMMIT_ENABLE: 'false'
+
+  broker-2:
+    image: confluentinc/cp-kafka:5.1.0
+    hostname: broker-2
+    container_name: broker-2
+    depends_on:
+      - zookeeper-2
+    environment:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-2:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker-2:9092'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_AUTO_COMMIT_ENABLE: 'false'
+
+  schema-registry-1:
+    image: confluentinc/cp-schema-registry:5.1.0
+    hostname: schema-registry-1
+    container_name: schema-registry-1
+    depends_on:
+      - zookeeper-1
+      - broker-1
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry-1
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper-1:2181'
+
+  schema-registry-2:
+    image: confluentinc/cp-schema-registry:5.1.0
+    hostname: schema-registry-2
+    container_name: schema-registry-2
+    depends_on:
+      - zookeeper-2
+      - broker-2
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry-2
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper-2:2181'
+
+  schema-registry-2-secured:
+    image: emmekappa/docker-nginx-basic-auth:latest
+    hostname: schema-registry-2-secured
+    container_name: schema-registry-2-secured
+    depends_on:
+      - schema-registry-2
+    environment:
+      FORWARD_HOST: 'schema-registry-2'
+      FORWARD_PORT: 8081
+
+  ksql-server-1:
+    image: confluentinc/cp-ksql-server:5.1.0
+    hostname: ksql-server-1
+    container_name: ksql-server-1
+    depends_on:
+      - broker-1
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_LOG4J_OPTS: "-Dlog4j.configuration=file:/etc/ksql/log4j-rolling.properties"
+      KSQL_BOOTSTRAP_SERVERS: "broker-1:9092"
+      KSQL_HOST_NAME: ksql-server
+      KSQL_APPLICATION_ID: "ksql-server-1"
+      KSQL_LISTENERS: "http://0.0.0.0:8088"
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry-1:8081"
+      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+
+  ksql-server-2:
+    image: confluentinc/cp-ksql-server:5.1.0
+    hostname: ksql-server-2
+    container_name: ksql-server-2
+    depends_on:
+      - broker-2
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_LOG4J_OPTS: "-Dlog4j.configuration=file:/etc/ksql/log4j-rolling.properties"
+      KSQL_BOOTSTRAP_SERVERS: "broker-2:9092"
+      KSQL_HOST_NAME: ksql-server
+      KSQL_APPLICATION_ID: "ksql-server-2"
+      KSQL_LISTENERS: "http://0.0.0.0:8088"
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry-2:8081"
+      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+
+  ksql-cli:
+    image: confluentinc/cp-ksql-cli:5.1.0
+    container_name: ksql-cli
+    depends_on:
+      - ksql-server-1
+      - ksql-server-2
+    entrypoint: /bin/sh
+    tty: true
+
+  datagen:
+    image: confluentinc/ksql-examples:5.1.0
+    container_name: datagen
+    depends_on:
+      - broker-1
+      - schema-registry-1
+    command: "bash -c 'echo Waiting for Kafka to be ready... && \
+                       cub kafka-ready -b broker-1:9092 1 300 && \
+                       echo Waiting for Confluent Schema Registry to be ready... && \
+                       cub sr-ready schema-registry-1 8081 300 && \
+                       echo Waiting a few seconds for topic creation to finish... && \
+                       sleep 20 && \
+                       ksql-datagen \
+                          bootstrap-server=broker-1:9092 \
+                          schemaRegistryUrl=http://schema-registry-1:8081 \
+                          quickstart=users \
+                          format=avro \
+                          topic=users \
+                          maxInterval=20 \
+                          iterations=100 && \
+                       ksql-datagen \
+                          bootstrap-server=broker-1:9092 \
+                          quickstart=clickstream \
+                          format=json \
+                          topic=clickstream \
+                          maxInterval=1000'"

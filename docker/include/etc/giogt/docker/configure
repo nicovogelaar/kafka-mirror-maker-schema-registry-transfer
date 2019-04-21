@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -o nounset \
+    -o errexit \
+    -o verbose \
+    -o xtrace
+
+dub ensure MIRROR_MAKER_WHITELIST
+
+# ======================================
+# consumer
+# ======================================
+
+dub ensure MIRROR_MAKER_CONSUMER_BOOTSTRAP_SERVERS
+dub ensure MIRROR_MAKER_CONSUMER_GROUP_ID
+
+# ======================================
+# producer
+# ======================================
+
+dub ensure MIRROR_MAKER_PRODUCER_BOOTSTRAP_SERVERS
+
+# ======================================
+# generating config files
+# ======================================
+
+dub path /etc/"${COMPONENT}"/ writable
+
+dub template "/etc/giogt/docker/consumer.properties.template" "/etc/${COMPONENT}/consumer.properties"
+dub template "/etc/giogt/docker/producer.properties.template" "/etc/${COMPONENT}/producer.properties"
+
+dub template "/etc/giogt/docker/log4j.properties.template" "/etc/${COMPONENT}/log4j.properties"

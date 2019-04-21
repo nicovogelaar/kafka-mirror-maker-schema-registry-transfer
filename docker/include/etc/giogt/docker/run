@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -o nounset \
+    -o errexit \
+    -o verbose \
+    -o xtrace
+
+echo "===> ENV Variables ..."
+env | sort
+
+echo "===> User"
+id
+
+echo "===> Configuring ..."
+/etc/giogt/docker/configure
+
+echo "===> Launching ... "
+exec /etc/giogt/docker/launch
