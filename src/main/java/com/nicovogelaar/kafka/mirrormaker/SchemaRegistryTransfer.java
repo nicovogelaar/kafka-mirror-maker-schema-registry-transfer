@@ -3,7 +3,9 @@ package com.nicovogelaar.kafka.mirrormaker;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+import io.confluent.kafka.serializers.subject.RecordNameStrategy;
 import io.confluent.kafka.serializers.subject.TopicNameStrategy;
+import io.confluent.kafka.serializers.subject.TopicRecordNameStrategy;
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
 import kafka.consumer.BaseConsumerRecord;
 import kafka.tools.MirrorMaker;
@@ -50,8 +52,16 @@ public class SchemaRegistryTransfer implements MirrorMaker.MirrorMakerMessageHan
         targetSchemaRegistryClient = new CachedSchemaRegistryClient(arguments.targetUrl, schemaCapacity, configs);
 
         schemaCache = new SynchronizedCache<>(new LRUCache<>(schemaCapacity));
-
-        subjectNameStrategy = new TopicNameStrategy();
+        if(arguments.subjectNameStrategy.equals("topicNameStrategy")){
+            subjectNameStrategy = new TopicNameStrategy();
+        } else if(arguments.subjectNameStrategy.equals("topicRecordNameStrategy")){
+            subjectNameStrategy = new TopicRecordNameStrategy();
+        } else if(arguments.subjectNameStrategy.equals("recordNameStrategy")){
+            subjectNameStrategy = new RecordNameStrategy();
+        } else
+        {
+            subjectNameStrategy = new TopicNameStrategy();
+        }
 
         includeKeys = arguments.includeKeys;
         whitelist = arguments.whitelist;

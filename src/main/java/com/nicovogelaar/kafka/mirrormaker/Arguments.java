@@ -8,17 +8,20 @@ class Arguments {
     private static final String TARGET_URL = "targetUrl";
     private static final String INCLUDE_KEYS = "includeKeys";
     private static final String WHITELIST = "whitelist";
+    private static final String SUBJECT_NAME_STRATEGY = "subjectNameStrategy";
 
     final String sourceUrl;
     final String targetUrl;
     final boolean includeKeys;
     final List<String> whitelist;
+    final String subjectNameStrategy;
 
     private static final Collection<String> REQUIRED = Arrays.asList(SOURCE_URL, TARGET_URL);
 
     private Arguments(final Map<String, String> parsedArgs) {
         sourceUrl = parsedArgs.get(SOURCE_URL);
         targetUrl = parsedArgs.get(TARGET_URL);
+        subjectNameStrategy = parsedArgs.get(SUBJECT_NAME_STRATEGY);
         includeKeys = Boolean.parseBoolean(parsedArgs.get(INCLUDE_KEYS));
 
         String w = parsedArgs.get(WHITELIST);
