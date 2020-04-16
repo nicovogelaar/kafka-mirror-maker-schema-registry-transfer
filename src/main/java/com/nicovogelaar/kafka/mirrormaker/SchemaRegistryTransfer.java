@@ -52,7 +52,7 @@ public class SchemaRegistryTransfer implements MirrorMaker.MirrorMakerMessageHan
         targetSchemaRegistryClient = new CachedSchemaRegistryClient(arguments.targetUrl, schemaCapacity, configs);
 
         schemaCache = new SynchronizedCache<>(new LRUCache<>(schemaCapacity));
-        if(arguments.subjectNameStrategy.equals("topicNameStrategy")){
+        if(arguments.subjectNameStrategy.equals("topicNameStrategy")) {
             subjectNameStrategy = new TopicNameStrategy();
         } else if(arguments.subjectNameStrategy.equals("topicRecordNameStrategy")){
             subjectNameStrategy = new TopicRecordNameStrategy();
@@ -77,11 +77,11 @@ public class SchemaRegistryTransfer implements MirrorMaker.MirrorMakerMessageHan
             log.trace("Skipping event. Topic {} is not in the whitelist.", record.topic());
             return Collections.singletonList(
                     new ProducerRecord<>(record.topic(),
-                                         record.partition(),
-                                         timestamp,
-                                         record.key(),
-                                         record.value(),
-                                         record.headers()));
+                            record.partition(),
+                            timestamp,
+                            record.key(),
+                            record.value(),
+                            record.headers()));
         }
 
         byte[] key = record.key();
@@ -104,11 +104,11 @@ public class SchemaRegistryTransfer implements MirrorMaker.MirrorMakerMessageHan
 
         return Collections.singletonList(
                 new ProducerRecord<>(record.topic(),
-                                     record.partition(),
-                                     timestamp,
-                                     key,
-                                     value,
-                                     record.headers()));
+                        record.partition(),
+                        timestamp,
+                        key,
+                        value,
+                        record.headers()));
     }
 
     private Optional<Integer> copySchema(ByteBuffer buffer, String topic, boolean isKey) {

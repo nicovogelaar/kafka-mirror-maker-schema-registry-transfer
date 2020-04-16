@@ -6,19 +6,25 @@ This is a Kafka MirrorMaker message handler to copy Avro schemas between schema 
 
 Arguments that can be passed to the message handler:
 
-| Name        | Description                  | Required | Default |
-| ----------- | ---------------------------- | -------- | ------- |
-| sourceUrl   | Source schema repository URL | Yes      |         |
-| targetUrl   | Target schema repository URL | Yes      |         |
-| includeKeys | Include message key schema   | No       | False   |
-| whitelist   | Whitelist topics             | No       |         |
+| Name        | Description                  | Required | Default          |
+| ----------- | ---------------------------- | -------- | -----------------|
+| sourceUrl   | Source schema repository URL | Yes      |                  |
+| targetUrl   | Target schema repository URL | Yes      |                  |
+| includeKeys | Include message key schema   | No       | False            |
+| whitelist   | Whitelist topics             | No       |                  |
+| subjectNameStrategy| Subject name strategy | No       |topicNameStrategy |
+
+`subjectNameStrategy` possible values:
+- `topicNameStrategy`
+- `topicRecordNameStrategy`
+- `recordNameStrategy`
 
 Run Kafka MirrorMaker maker as follows:
 
 ```bash
 $ kafka-mirror-maker [...] \
     --message.handler=com.nicovogelaar.kafka.mirrormaker.SchemaRegistryTransfer \
-    --message.handler.args=sourceUrl=http://schema-registry-1:8081,targetUrl=http://schema-registry-2:8081
+    --message.handler.args=sourceUrl=http://schema-registry-1:8081,targetUrl=http://schema-registry-2:8081,subjectNameStrategy=topicNameStrategy
 ```
 
 ## Example
